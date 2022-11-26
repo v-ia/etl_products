@@ -52,7 +52,7 @@ with DAG(
                 records = cur.fetchall(
                     'SELECT barcode FROM items WHERE id > $1 AND nutriscore_grade IS NULL ORDER BY id LIMIT $2',
                     Variable.get("current_id"), Variable.get("n_items"))
-        return [record['barcode'] for record in records]
+        return records
 
     @task(task_id='extract_and_transform_run')
     async def extract_and_transform_run(**kwargs):
@@ -76,8 +76,9 @@ with DAG(
             ids = list()
             with conn.cursor() as cur:
                 for barcode, nutriscore_grade in nutriscore_grades.items():
-                    ids.append(int(cur.execute('UPDATE items SET nutriscore_grade = $1 WHERE barcode = $2 RETURNING id',
-                                               nutriscore_grade, barcode)))
+                    cur.execute('UPDATE items SET nutriscore_grade = $1 WHERE barcode = $2 RETURNING id',
+                                nutriscore_grade, barcode)
+                    ids.append(int(next(cur)))
             Variable.set("current_id", max(ids))
 
     get_barcodes_db() >> extract_and_transform_run() >> load_data_to_db()
