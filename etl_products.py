@@ -10,7 +10,7 @@ default_args = {
 }
 
 
-# secondary function for ex_and_tr_run stage
+# secondary function for extract_and_transform_run stage
 async def _extract_and_transform(**kwargs):
     import asyncio
     import aiohttp
@@ -79,6 +79,6 @@ with DAG(
                     cur.execute('UPDATE items SET nutriscore_grade = $1 WHERE barcode = $2 RETURNING id',
                                 nutriscore_grade, barcode)
                     ids.append(int(next(cur)))
-            Variable.set("current_id", max(ids))
+        Variable.set("current_id", max(ids))
 
     get_barcodes_db() >> extract_and_transform_run() >> load_data_to_db()
