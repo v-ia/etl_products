@@ -49,9 +49,9 @@ with DAG(
             dbname=connection.EXTRA_KEY
         ) as conn:
             with conn.cursor() as cur:
-                records = cur.fetchall(
-                    'SELECT barcode FROM items WHERE id > $1 AND nutriscore_grade IS NULL ORDER BY id LIMIT $2',
-                    Variable.get("current_id"), Variable.get("n_items"))
+                cur.execute('SELECT barcode FROM items WHERE id > $1 AND nutriscore_grade IS NULL ORDER BY id LIMIT $2',
+                            Variable.get("current_id"), Variable.get("n_items"))
+                records = cur.fetchall()
         return records
 
     @task(task_id='extract_and_transform_run')
@@ -78,7 +78,7 @@ with DAG(
                 for barcode, nutriscore_grade in nutriscore_grades.items():
                     cur.execute('UPDATE items SET nutriscore_grade = $1 WHERE barcode = $2 RETURNING id',
                                 nutriscore_grade, barcode)
-                    ids.append(int(next(cur)))
+                    ids.append(int(cur.fetchone()))
         Variable.set("current_id", max(ids))
 
     get_barcodes_db() >> extract_and_transform_run() >> load_data_to_db()
