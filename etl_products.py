@@ -49,8 +49,8 @@ with DAG(
             dbname=connection.EXTRA_KEY
         ) as conn:
             with conn.cursor() as cur:
-                cur.execute('SELECT barcode FROM items WHERE id > $1 AND nutriscore_grade IS NULL ORDER BY id LIMIT $2',
-                            Variable.get("current_id"), Variable.get("n_items"))
+                cur.execute('SELECT barcode FROM items WHERE id > %s AND nutriscore_grade IS NULL ORDER BY id LIMIT %s',
+                            (Variable.get("current_id"), Variable.get("n_items")))
                 records = cur.fetchall()
         return records
 
@@ -76,8 +76,8 @@ with DAG(
             ids = list()
             with conn.cursor() as cur:
                 for barcode, nutriscore_grade in nutriscore_grades.items():
-                    cur.execute('UPDATE items SET nutriscore_grade = $1 WHERE barcode = $2 RETURNING id',
-                                nutriscore_grade, barcode)
+                    cur.execute('UPDATE items SET nutriscore_grade = %s WHERE barcode = %s RETURNING id',
+                                (nutriscore_grade, barcode))
                     ids.append(int(cur.fetchone()))
         Variable.set("current_id", max(ids))
 
